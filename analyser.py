@@ -1,3 +1,4 @@
+from datetime import datetime
 
 def should_flag_ip(value):
     return value >= 2
@@ -15,11 +16,17 @@ def get_severity_level(value):
         return None
 
 
-def analyse_log(filename):
+def analyse_log(filename, report_filename="security_alerts.txt"):
     search = "ip="
     SUCCESS = 0
     FAILED = 0
     flagged_ips = 0
+    security_alerts = []
+    critical_count = 0
+    high_count = 0
+    medium_count = 0
+    low_count = 0
+
 
     try:
         with open(filename, "r") as f:
@@ -58,8 +65,36 @@ def analyse_log(filename):
                 severity = get_severity_level(value)
                 if severity is not None:
                     print(f"SECURITY ALERT: {key} has {value} [{severity}]")
+                    security_alerts.append((key, value, severity))
+                    if severity == "CRITICAL":
+                        critical_count += 1
+                    elif severity == "HIGH":
+                        high_count += 1
+                    elif severity == "MEDIUM":
+                        medium_count += 1
+                    elif severity == "LOW":
+                        low_count += 1
+
 
             print("UNIQUE IPs FLAGGED:", flagged_ips)
+            with open("security_alerts.txt", "w") as report:
+                report.write("SECURITY ALERTS REPORT\n")
+                report.write("======================\n")
+                report.write(f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                report.write("\n")
+                report.write("SUMMARY\n")
+                report.write("-------\n")
+                report.write(f"Total alerts: {len(security_alerts)}\n")
+                report.write(f"CRITICAL: {critical_count}\n")
+                report.write(f"HIGH: {high_count}\n")
+                report.write(f"MEDIUM: {medium_count}\n")
+                report.write(f"LOW: {low_count}\n")
+                report.write("\n")
+                report.write("SECURITY ALERTS\n")
+                report.write("---------------\n")
+
+                for alert in security_alerts:
+                    report.write(f"{alert[0]} has {alert[1]} failed attempts and the severity is [{alert[2]}]\n")
 
     except FileNotFoundError:
         print("File not found. Please check the file path and try again.")

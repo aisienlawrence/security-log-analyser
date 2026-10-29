@@ -83,3 +83,23 @@ def test_empty_log_file(tmp_path, capsys):
     assert "TOTAL SUCCESSFUL LOGIN ATTEMPTS: 0" in captured.out
     assert "TOTAL FAILED LOGIN ATTEMPTS: 0" in captured.out
     assert "TOTAL LOGIN ATTEMPTS: 0" in captured.out
+
+def test_security_alerts(tmp_path):
+    report_file = tmp_path / "security_alerts.txt"
+    log_file = tmp_path / "test.log"
+    log_file.write_text(
+        "LOGIN SUCCESS user=test ip=10.0.0.2\n"
+        "LOGIN FAILED user=test ip=10.0.0.2\n"
+        "LOGIN FAILED user=test ip=10.0.0.2\n"
+    )
+
+    analyse_log(str(log_file), str(report_file))
+
+    with open("security_alerts.txt", "r") as report:
+        content = report.read()
+        assert "10.0.0.2 has 2 failed attempts and the severity is [LOW]" in content
+        assert "Total alerts: 1" in content
+        assert "LOW: 1" in content
+        assert "HIGH: 0" in content
+        assert "CRITICAL: 0" in content
+        assert "MEDIUM: 0" in content
